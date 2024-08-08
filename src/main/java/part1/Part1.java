@@ -1,4 +1,4 @@
-package part1;
+package main.java.part1;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,7 +18,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import static part1.Util.bytesToHex;
+import static main.java.part1.Util.bytesToHex;
 
 /**
  * FileEncryptor class for encrypting and decrypting files using AES.
@@ -32,7 +32,7 @@ public class Part1 {
 
     public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
         if (args.length < 1) {
-            System.err.println("Usage: java FileEncryptor <enc/dec> -i <inputFile> -o <outputFile> [-k <keyFile>] [-iv <ivFile>]");
+            System.err.println("Usage: java Part1 <enc/dec> -i <inputFile> -o <outputFile> [-k <keyFile>] [-iv <ivFile>]");
             System.exit(1);
         }
 
