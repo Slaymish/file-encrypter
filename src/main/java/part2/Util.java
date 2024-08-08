@@ -1,4 +1,4 @@
-package part4;
+package main.java.part2;
 
 /**
  *
