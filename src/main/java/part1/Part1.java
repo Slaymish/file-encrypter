@@ -9,6 +9,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.crypto.Cipher;
@@ -28,12 +29,13 @@ public class Part1 {
     private static final Logger LOG = Logger.getLogger(Part1.class.getSimpleName());
 
     private static final String ALGORITHM = "AES";
+
     private static final String CIPHER = "AES/CBC/PKCS5PADDING";
 
     public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
         if (args.length < 1) {
             System.err.println("Usage: java Part1 <enc/dec> -i <inputFile> -o <outputFile> [-k <keyFile>] [-iv <ivFile>]");
-            System.exit(1);
+            return;
         }
 
         String operation = args[0]; // enc/dec
@@ -50,7 +52,7 @@ public class Part1 {
                 case "-iv" -> ivFile = args[++i];
                 default -> {
                     System.err.println("Unknown argument: " + args[i]);
-                    System.exit(1);
+                    return;
                 }
             }
         }
@@ -120,7 +122,7 @@ public class Part1 {
      * @param inputFile The input file path.
      * @param outputFile The output file path.
      */
-    private static void encryptFiles(Cipher cipher, Path inputFile, Path outputFile) {
+    private static void encryptFiles(Cipher cipher, Path inputFile, Path outputFile) throws IOException {
         try (InputStream fin = Files.newInputStream(inputFile);
              OutputStream fout = Files.newOutputStream(outputFile);
              CipherOutputStream cipherOut = new CipherOutputStream(fout, cipher)) {
@@ -131,8 +133,8 @@ public class Part1 {
                 cipherOut.write(bytes, 0, length);
             }
         } catch (IOException e) {
-            LOG.log(Level.INFO, "Unable to encrypt", e);
-            System.err.println("Error: Unable to encrypt the file. Please check the input file and try again.");
+            LOG.log(Level.SEVERE, "Unable to encrypt", e);
+            throw e;  // Ensure the exception is thrown
         }
 
         LOG.info("Encryption finished, saved at " + outputFile);
@@ -145,7 +147,7 @@ public class Part1 {
      * @param inputFile The input file path.
      * @param outputFile The output file path.
      */
-    private static void decryptFiles(Cipher cipher, Path inputFile, Path outputFile) {
+    private static void decryptFiles(Cipher cipher, Path inputFile, Path outputFile) throws IOException {
         try (InputStream encryptedData = Files.newInputStream(inputFile);
              CipherInputStream decryptStream = new CipherInputStream(encryptedData, cipher);
              OutputStream decryptedOut = Files.newOutputStream(outputFile)) {
@@ -157,10 +159,10 @@ public class Part1 {
             }
         } catch (IOException ex) {
             LOG.log(Level.SEVERE, "IOException during decryption", ex);
-            System.err.println("Error: Unable to decrypt the file. Please check the input file and try again.");
+            throw ex;  // Ensure the exception is thrown
         } catch (Exception ex) {
             LOG.log(Level.SEVERE, "Exception during decryption", ex);
-            System.err.println("Error: Unable to decrypt the file. Please ensure the correct key and IV are used.");
+            throw new IOException("Error during decryption", ex);
         }
 
         LOG.info("Decryption complete, saved at " + outputFile);
