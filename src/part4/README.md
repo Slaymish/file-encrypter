@@ -17,16 +17,16 @@ Types:
 **Encrypting the file (using part 2):**
 ```bash
 cd out/production/cybrassignment
-echo "Hello, this is a test file!!!" > src/part4/plaintext.txt
-java -cp . part2.Part2 enc -i src/part4/plaintext.txt --pass "apple" -o src/part4/plaintext.txt.enc
+echo "Hello, this is a test file!!!" > part4/plaintext.txt
+java -cp . part2.Part2 enc -i part4/plaintext.txt --pass "ass" -o part4/plaintext.txt.enc
 ```
 
 **Running the bruteforce:**
 ```bash
 cd out/production/cybrassignment
-java -cp . part4.Part4 src/part4/plaintext.txt.enc --type 0
-java -cp . part4.Part4 src/part4/plaintext.txt.enc --type 1
-java -cp . part4.Part4 src/part4/plaintext.txt.enc --type 2
+java -cp . part4.Part4 part4/plaintext.txt.enc --type 0
+java -cp . part4.Part4 part4/plaintext.txt.enc --type 1
+java -cp . part4.Part4 part4/plaintext.txt.enc --type 2
 ```
 
 Times recorded for cracking the ciphertext (using password 'apple') using brute-force with different character sets:

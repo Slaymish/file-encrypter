@@ -15,12 +15,12 @@ Since the salt is stored in the encrypted file, there's no need for the user to 
 **Encryption:**
 ```bash
 cd out/production/cybrassignment
-echo "Hello, this is a test file!!!" > src/part2/plaintext.txt    
-java -cp . part2.Part2 enc -i src/part2/plaintext.txt --pass "password123" -o src/part2/plaintext.txt.enc
+echo "Hello, this is a test file!!!" > part2/plaintext.txt    
+java -cp . part2.Part2 enc -i part2/plaintext.txt --pass "password123" -o part2/plaintext.txt.enc
 ```
 
 **Decryption:**
 ```bash
 cd out/production/cybrassignment
-java -cp . part2.Part2 dec -i src/part2/plaintext.txt.enc --pass "password123" -o src/part2/plaintext.txt.dec
+java -cp . part2.Part2 dec -i part2/plaintext.txt.enc --pass "password123" -o part2/plaintext.txt.dec
 ```
