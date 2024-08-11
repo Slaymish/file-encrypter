@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -18,8 +19,7 @@ import javax.crypto.CipherOutputStream;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
-import static main.java.part1.Util.bytesToHex;
+import java.util.Base64;
 
 /**
  * FileEncryptor class for encrypting and decrypting files using AES.
@@ -29,12 +29,27 @@ public class Part1 {
     private static final Logger LOG = Logger.getLogger(Part1.class.getSimpleName());
 
     private static final String ALGORITHM = "AES";
+    private static final Map<String, String> ciphers = Map.of(
+            "CBC", "AES/CBC/PKCS5PADDING",
+            "ECB", "AES/ECB/PKCS5PADDING",
+            "CTR", "AES/CTR/NoPadding",
+            "OFB", "AES/OFB/NoPadding",
+            "CFB", "AES/CFB/NoPadding",
+            "GCM", "AES/GCM/NoPadding");
 
-    private static final String CIPHER = "AES/CBC/PKCS5PADDING";
-
+    /**
+     * Main method for encrypting and decrypting files using AES.
+     *
+     * @param args Command line arguments.
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     * @throws InvalidKeyException
+     * @throws InvalidAlgorithmParameterException
+     * @throws IOException
+     */
     public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
         if (args.length < 1) {
-            System.err.println("Usage: java Part1 <enc/dec> -i <inputFile> -o <outputFile> [-k <keyFile>] [-iv <ivFile>]");
+            System.err.println("Usage: java Part1 <enc/dec> -i <inputFile> -o <outputFile> [-k <keyFile>] [-iv <ivFile>] [-m <mode>]");
             return;
         }
 
@@ -43,13 +58,15 @@ public class Part1 {
         String outputFile = null;
         String keyFile = null;
         String ivFile = null;
+        String mode = "AES/CBC/PKCS5PADDING";
 
         for (int i = 1; i < args.length; i++) {
             switch (args[i]) {
-                case "-i" -> inputFile = args[++i];
-                case "-o" -> outputFile = args[++i];
-                case "-k" -> keyFile = args[++i];
-                case "-iv" -> ivFile = args[++i];
+                case "-i", "--input-file" -> inputFile = args[++i];
+                case "-o", "--output-file" -> outputFile = args[++i];
+                case "-k", "--key-file" -> keyFile = args[++i];
+                case "-iv", "--initialisation-vector" -> ivFile = args[++i];
+                case "-m", "--mode" -> mode = ciphers.getOrDefault(args[++i], "AES/CBC/PKCS5PADDING");
                 default -> {
                     System.err.println("Unknown argument: " + args[i]);
                     return;
@@ -57,59 +74,97 @@ public class Part1 {
             }
         }
 
-        if (inputFile == null || outputFile == null) {
-            System.err.println("Input and output files are required.");
+        if (inputFile == null) {
+            System.err.println("Input file is required.");
             System.exit(1);
         }
 
+        if (outputFile == null) { // set the output name if not provided
+            outputFile = operation.equals("enc") ? inputFile + ".enc" : inputFile.replaceFirst("\\.enc$", "") + ".dec";
+        }
+
+
+        Path inputFilePath = Path.of(inputFile);
+        if (!Files.exists(inputFilePath)) {
+            LOG.severe("Input file does not exist: " + inputFilePath.toAbsolutePath());
+            throw new NoSuchFileException(inputFilePath.toString());
+        }
+
+        Path outputFilePath = Path.of(outputFile);
+
         SecureRandom sr = new SecureRandom();
         byte[] key = new byte[16];
-        byte[] initVector = new byte[16];
+        byte[] initVector = new byte[16]; // 16 bytes IV
         IvParameterSpec iv;
         SecretKeySpec skeySpec;
 
         if (operation.equals("enc")) {
             if (keyFile == null) {
-                sr.nextBytes(key); // 128 bit key
-                Files.write(Path.of("key.base64"), key);
-                LOG.info("Key saved to key.base64: " + bytesToHex(key));
+                sr.nextBytes(key); // Generate random key
+                // Save the key file in the same directory as the input file
+                Path keyFilePath = inputFilePath.resolveSibling("key.base64");
+                Files.write(keyFilePath, Base64.getEncoder().encode(key));
+                LOG.info("Key saved to " + keyFilePath.toAbsolutePath() + ": " + Util.bytesToHex(key));
+
+
             } else {
-                key = Files.readAllBytes(Path.of(keyFile));
-                LOG.info("Key loaded from " + keyFile + ": " + bytesToHex(key));
+                key = Base64.getDecoder().decode(Files.readAllBytes(Path.of(keyFile)));
+                LOG.info("Key loaded from " + keyFile + ": " + Util.bytesToHex(key));
             }
 
             if (ivFile == null) {
-                sr.nextBytes(initVector); // 16 bytes IV
-                Files.write(Path.of("iv.base64"), initVector);
-                LOG.info("IV saved to iv.base64: " + bytesToHex(initVector));
+                sr.nextBytes(initVector); // Generate random IV
+                Files.write(inputFilePath.resolveSibling("iv.base64"), Base64.getEncoder().encode(initVector));
+                LOG.info("IV saved to iv.base64: " + Util.bytesToHex(initVector));
             } else {
-                initVector = Files.readAllBytes(Path.of(ivFile));
-                LOG.info("IV loaded from " + ivFile + ": " + bytesToHex(initVector));
+                initVector = Base64.getDecoder().decode(Files.readAllBytes(Path.of(ivFile)));
+                LOG.info("IV loaded from " + ivFile + ": " + Util.bytesToHex(initVector));
             }
 
             iv = new IvParameterSpec(initVector);
             skeySpec = new SecretKeySpec(key, ALGORITHM);
-            Cipher cipher = Cipher.getInstance(CIPHER);
-            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
+            Cipher cipher = Cipher.getInstance(mode);
+            if (mode.equals(ciphers.get("CBC"))) {
+                cipher.init(Cipher.ENCRYPT_MODE, skeySpec, iv);
+            } else {
+                cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
+            }
 
-            encryptFiles(cipher, Path.of(inputFile), Path.of(outputFile));
+            encryptFiles(cipher, inputFilePath, outputFilePath);
         } else if (operation.equals("dec")) {
             if (keyFile == null || ivFile == null) {
                 System.err.println("Key file and IV file are required for decryption.");
                 System.exit(1);
             }
 
-            key = Files.readAllBytes(Path.of(keyFile));
-            initVector = Files.readAllBytes(Path.of(ivFile));
-            LOG.info("Key loaded from " + keyFile + ": " + bytesToHex(key));
-            LOG.info("IV loaded from " + ivFile + ": " + bytesToHex(initVector));
+
+
+
+            // Load the key file from the same directory as the input file
+            Path keyFilePath = inputFilePath.resolveSibling("key.base64");
+            key = Base64.getDecoder().decode(Files.readAllBytes(keyFilePath));
+            LOG.info("Key loaded from " + keyFilePath.toAbsolutePath() + ": " + Util.bytesToHex(key));
+
+            if (!Files.exists(keyFilePath)) {
+                LOG.severe("Key file does not exist: " + keyFilePath.toAbsolutePath());
+                throw new NoSuchFileException(keyFilePath.toString());
+            }
+
+
+            initVector = Base64.getDecoder().decode(Files.readAllBytes(Path.of(ivFile)));
+            LOG.info("IV loaded from " + ivFile + ": " + Util.bytesToHex(initVector));
 
             iv = new IvParameterSpec(initVector);
             skeySpec = new SecretKeySpec(key, ALGORITHM);
-            Cipher cipher = Cipher.getInstance(CIPHER);
-            cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
+            Cipher cipher = Cipher.getInstance(mode);
 
-            decryptFiles(cipher, Path.of(inputFile), Path.of(outputFile));
+            if (mode.equals(ciphers.get("CBC"))) {
+                cipher.init(Cipher.DECRYPT_MODE, skeySpec, iv);
+            } else {
+                cipher.init(Cipher.DECRYPT_MODE, skeySpec);
+            }
+
+            decryptFiles(cipher, inputFilePath, outputFilePath);
         } else {
             System.err.println("Unknown operation: " + operation);
             System.exit(1);

@@ -46,9 +46,9 @@ public class Part2 {
 
         for (int i = 1; i < args.length; i++) {
             switch (args[i]) {
-                case "-i" -> inputFile = args[++i];
-                case "-o" -> outputFile = args[++i];
-                case "-p", "-pass" -> password = args[++i];
+                case "-i", "--input-file" -> inputFile = args[++i];
+                case "-o", "--output-file" -> outputFile = args[++i];
+                case "-p", "--pass" -> password = args[++i];
                 default -> {
                     System.err.println("Unknown argument: " + args[i]);
                     System.exit(1);

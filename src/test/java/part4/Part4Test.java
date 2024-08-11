@@ -1,69 +1,106 @@
 package test.java.part4;
 
-import main.java.part2.Part2;
 import main.java.part4.Part4;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Tests for the Part2 encryption and decryption.
+ * Tests for the Part4 brute-force attack.
  * Author: Hamish Burke
  */
 public class Part4Test {
-    private static final Path INPUT_FILE = Path.of("test/resources/text-files/plaintext.txt");
+    private static final Path PLAINTEXT_FILE = Path.of("test/resources/text-files/plaintext.txt");
     private static final Path ENCRYPTED_FILE = Path.of("test/resources/text-files/ciphertext.enc");
 
-    @Test
-    public void testMain() throws Exception {
-        Part4.main(new String[]{ENCRYPTED_FILE.toString(), "-t", "1"});
+    @BeforeEach
+    public void setup() throws Exception {
+        // Ensure any existing encrypted file is deleted
+        Files.deleteIfExists(ENCRYPTED_FILE);
     }
 
     @Test
-    public void testMain2() throws Exception {
-        Part4.main(new String[]{ENCRYPTED_FILE.toString(), "-t", "2"});
-    }
+    public void testPrintsCorrectPasswordSimple() throws Exception {
+        // Use a very simple password for this test
+        String password = "a";
+        Part4.encryptFile(PLAINTEXT_FILE, ENCRYPTED_FILE, password);
 
-    @Test
-    public void testMain3() throws Exception {
-        Part4.main(new String[]{ENCRYPTED_FILE.toString(), "-t", "3"});
-    }
-
-    @Test
-    public void testPrintsCorrectPassword() throws Exception {
         // Redirect System.out to capture output
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
-        PrintStream originalErr = System.err;
         try {
-            Path tempFile = Files.createTempFile("temp", ".txt");
-            System.setOut(new PrintStream(tempFile.toFile()));
-            Part4.main(new String[]{ENCRYPTED_FILE.toString(), "-t", "1"});
-            String output = Files.readString(tempFile);
-            Assertions.assertTrue(output.contains("apple"));
+            System.setOut(new PrintStream(outputStream));
+            Part4.main(new String[]{ENCRYPTED_FILE.toString(), "-t", "0"});
+            String output = outputStream.toString().trim();
+            System.out.println("Expected: " + password + ", Actual: " + output); // Debugging output
+            Assertions.assertEquals(password, output);
         } finally {
             System.setOut(originalOut);
-            System.setErr(originalErr);
         }
     }
 
     @Test
-    public void testPrintsCorrectPassword2() throws Exception {
+    public void testPrintsCorrectPasswordType0() throws Exception {
+        // Encrypt the file with a known password that matches the expected output
+        String password = "apple";
+        Part4.encryptFile(PLAINTEXT_FILE, ENCRYPTED_FILE, password);
+
         // Redirect System.out to capture output
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
-        PrintStream originalErr = System.err;
         try {
-            Path tempFile = Files.createTempFile("temp", ".txt");
-            System.setOut(new PrintStream(tempFile.toFile()));
-            Part4.main(new String[]{ENCRYPTED_FILE.toString(), "-t", "2"});
-            String output = Files.readString(tempFile);
-            Assertions.assertTrue(output.contains("dog"));
+            System.setOut(new PrintStream(outputStream));
+            Part4.main(new String[]{ENCRYPTED_FILE.toString(), "-t", "0"});
+            String output = outputStream.toString().trim();
+            System.out.println("Expected: " + password + ", Actual: " + output); // Debugging output
+            Assertions.assertEquals(password, output);
         } finally {
             System.setOut(originalOut);
-            System.setErr(originalErr);
+        }
+    }
+
+    @Test
+    public void testPrintsCorrectPasswordType1() throws Exception {
+        // Encrypt the file with a known password that matches the expected output
+        String password = "pass12";
+        Part4.encryptFile(PLAINTEXT_FILE, ENCRYPTED_FILE, password);
+
+        // Redirect System.out to capture output
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        try {
+            System.setOut(new PrintStream(outputStream));
+            Part4.main(new String[]{ENCRYPTED_FILE.toString(), "-t", "1"});
+            String output = outputStream.toString().trim();
+            System.out.println("Expected: " + password + ", Actual: " + output); // Debugging output
+            Assertions.assertEquals(password, output);
+        } finally {
+            System.setOut(originalOut);
+        }
+    }
+
+    @Test
+    public void testPrintsCorrectPasswordType2() throws Exception {
+        // Encrypt the file with a known password that matches the expected output
+        String password = "Passwd";
+        Part4.encryptFile(PLAINTEXT_FILE, ENCRYPTED_FILE, password);
+
+        // Redirect System.out to capture output
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        try {
+            System.setOut(new PrintStream(outputStream));
+            Part4.main(new String[]{ENCRYPTED_FILE.toString(), "-t", "2"});
+            String output = outputStream.toString().trim();
+            System.out.println("Expected: " + password + ", Actual: " + output); // Debugging output
+            Assertions.assertEquals(password, output);
+        } finally {
+            System.setOut(originalOut);
         }
     }
 }
