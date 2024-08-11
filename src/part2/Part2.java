@@ -1,4 +1,4 @@
-package main.java.part2;
+package part2;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
