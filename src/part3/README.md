@@ -20,5 +20,5 @@ Decryption Time (ns): Time taken to decrypt, averaged over runs.
 
 ```bash
 cd out/production/cybrassignment
-java -cp . part3.Part3 -o part3/results.csv -repeats 10
+java -cp . part3.Part3 -o part3/results.csv -repeats 100
 ```

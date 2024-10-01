@@ -6,13 +6,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.spec.KeySpec;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.logging.Logger;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -23,7 +17,7 @@ public class Part4 {
     private static final String CIPHER = "AES/CBC/PKCS5PADDING";
     private static final String KDF_ALGORITHM = "PBKDF2WithHmacSHA256";
     private static final int KEY_SIZE = 128;
-    private static final int ITERATIONS = 1000; // usually 65536
+    private static final int ITERATIONS = 65536; // usually 65536
     private static final int SALT_SIZE = 16;
     private static final int IV_SIZE = 16;
 
@@ -43,14 +37,15 @@ public class Part4 {
 
         byte[] ciphertext = Files.readAllBytes(Paths.get(ciphertextPath));
 
-        long startTime = System.currentTimeMillis();
+        //long startTime = System.currentTimeMillis();
         String password = bruteForceAttack(ciphertext, type);
-        long endTime = System.currentTimeMillis();
-        System.out.println("Time taken: " + (endTime - startTime) + "ms");
-        System.out.println(password);
+        //long endTime = System.currentTimeMillis();
+        //System.out.println("Time taken: " + (endTime - startTime) + "ms");
+
+        System.out.println(password != null ? "Password found: " + password : "Password not found.");
     }
 
-    public static String bruteForceAttack(byte[] ciphertext, int type) throws InterruptedException {
+    public static String bruteForceAttack(byte[] ciphertext, int type) {
         char[] charset = switch (type) {
             case 0 -> "abcdefghijklmnopqrstuvwxyz".toCharArray();
             case 1 -> "abcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
@@ -58,30 +53,14 @@ public class Part4 {
             default -> throw new IllegalArgumentException("Invalid type");
         };
 
-        // Create a thread pool
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        List<Future<String>> futures = new ArrayList<>();
-
-        // Submit tasks for each possible password length
+        // Brute-force by trying all possible combinations
         for (int len = 1; len <= 6; len++) {
-            final int length = len;
-            futures.add(executor.submit(() -> tryPasswordsInThread(ciphertext, charset, length)));
-        }
-
-        // Wait for any thread to return a result
-        for (Future<String> future : futures) {
-            try {
-                String result = future.get();
-                if (result != null) {
-                    executor.shutdownNow();  // Stop all other threads
-                    return result;
-                }
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            char[] attempt = new char[len];
+            if (tryPasswords(ciphertext, attempt, charset, 0)) {
+                return new String(attempt);
             }
         }
 
-        executor.shutdown();
         return null;
     }
 
@@ -130,14 +109,6 @@ public class Part4 {
             // Other exceptions should also return false
             return false;
         }
-    }
-
-    private static String tryPasswordsInThread(byte[] ciphertext, char[] charset, int length) {
-        char[] attempt = new char[length];
-        if (tryPasswords(ciphertext, attempt, charset, 0)) {
-            return new String(attempt);
-        }
-        return null;
     }
 
     private static boolean isReadableText(String text) {

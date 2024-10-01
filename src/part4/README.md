@@ -18,7 +18,7 @@ Types:
 ```bash
 cd out/production/cybrassignment
 echo "Hello, this is a test file!!!" > part4/plaintext.txt
-java -cp . part2.Part2 enc -i part4/plaintext.txt --pass "ass" -o part4/plaintext.txt.enc
+java -cp . part2.Part2 enc -i part4/plaintext.txt --pass "aa" -o part4/plaintext.txt.enc
 ```
 
 **Running the bruteforce:**
@@ -29,13 +29,16 @@ java -cp . part4.Part4 part4/plaintext.txt.enc --type 1
 java -cp . part4.Part4 part4/plaintext.txt.enc --type 2
 ```
 
-Times recorded for cracking the ciphertext (using password 'apple') using brute-force with different character sets:
+Times recorded for cracking the ciphertext (using password 'aa') using brute-force with different character sets:
 
 - **Type 0** (password composed only of lowercase letters):
-    - Time taken: X milliseconds
+    - Time taken: 2298 milliseconds
 
 - **Type 1** (password composed of lowercase letters and numbers):
-    - Time taken: Y milliseconds
+    - Time taken: 3064 milliseconds
 
 - **Type 2** (password composed of lowercase and uppercase letters):
-    - Time taken: Z milliseconds
+    - Time taken: 4423 milliseconds
+
+The time it takes to brute-force a password grows exponentially with the length of the password. 
+Given the speed it took to bruteforce 'aa', cracking a 6-character password using only lowercase letters could take around 549 hours
